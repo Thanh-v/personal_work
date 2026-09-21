@@ -1,17 +1,40 @@
+default rel
+
 section .data
-    hello db 'Hello, World!', 10
-    length equ $ - hello
+    hello db 'Hello, World!', 13, 10
+    hello_len equ $ - hello
 
 section .text
-    global _start
+    global main
 
-_start:
-    mov rax, 1
-    mov rdi, 1
-    mov rsi, hello
-    mov rdx, length
-    syscall
+    extern GetStdHandle
+    extern WriteFile
+    extern ExitProcess
 
-    mov rax, 60
-    xor rdi, rdi
-    syscall
+main:
+    ; Windows x64 stack:
+    ; 32-byte shadow space + alignment/local space
+    sub rsp, 38h
+
+    ; GetStdHandle(STD_OUTPUT_HANDLE)
+    mov ecx, -11
+    call GetStdHandle
+
+    ; WriteFile(
+    ;   hFile,
+    ;   lpBuffer,
+    ;   nNumberOfBytesToWrite,
+    ;   lpNumberOfBytesWritten,
+    ;   lpOverlapped
+    ; )
+    mov rcx, rax
+    lea rdx, [hello]
+    mov r8d, hello_len
+    lea r9, [rsp + 28h]
+
+    mov qword [rsp + 20h], 0
+    call WriteFile
+
+    ; ExitProcess(0)
+    xor ecx, ecx
+    call ExitProcess
